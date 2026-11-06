@@ -6,7 +6,13 @@ project uses semantic versioning once released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **`set_source_voltage_live()`.** Changes the source voltage while a capture
+  stream is running, which `set_source_voltage_mv()` refuses. It writes the
+  command only and does not read the metadata back, since the readback would
+  share the port with the sample stream. Use it from a scheduled action
+  (`capture(at=...)`) to step the supply at a known sample index.
 
 ## [0.5.1] — 2026-08-24
 

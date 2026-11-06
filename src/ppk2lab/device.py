@@ -659,6 +659,32 @@ class PPK2:
         self.session_log.append(change)
         return change
 
+    def set_source_voltage_live(self, voltage_mv: int) -> StateChange:
+        """Change the source voltage while a capture stream is running.
+
+        Writes the command only: no metadata readback, which would interleave
+        with the sample stream on the same port. Source mode only.
+        """
+        self._check_voltage_ceiling(voltage_mv)
+        request = cmd_set_source_voltage(voltage_mv)
+        before = self.state.to_json()
+        self.transport.write(request)
+        self._update_state(
+            source_voltage_mv=voltage_mv,
+            source_voltage_basis=VoltageBasis.CONFIGURED_SOURCE,
+        )
+        change = StateChange(
+            "set_source_voltage_live",
+            {"voltage_mv": voltage_mv},
+            before,
+            self.state.to_json(),
+            applied=True,
+            observed_after=False,
+            warnings=["applied during a stream; not read back"],
+        )
+        self.session_log.append(change)
+        return change
+
     def set_dut_power(self, on: bool, *, dry_run: bool = False) -> StateChange:
         request = cmd_set_dut_power(on)
         before = self.state.to_json()

@@ -223,6 +223,22 @@ def test_metadata_refresh_refused_while_measuring(sim_device):
     sim_device.stop_measuring()
 
 
+def test_live_voltage_change_during_a_stream_writes_without_readback(sim_device):
+    with sim_device.stream(sample_limit=1000) as events:
+        next(iter(events))
+        change = sim_device.set_source_voltage_live(2000)
+    assert change.applied and not change.observed_after
+    assert sim_device.transport.simulator.vdd_mv == 2000
+    assert sim_device.state.source_voltage_mv == 2000
+    assert sim_device.state.source_voltage_basis is VoltageBasis.CONFIGURED_SOURCE
+
+
+def test_live_voltage_validated_before_any_write(sim_device):
+    with pytest.raises(VoltageRangeError):
+        sim_device.set_source_voltage_live(10_000)
+    assert sim_device.transport.simulator.vdd_mv != 10_000
+
+
 def test_stream_respects_sample_limit(sim_device):
     events = list(sim_device.stream(sample_limit=1000))
     blocks = [e for e in events if isinstance(e, SampleBlock)]
